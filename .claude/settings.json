@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cargo --version)",
+      "Bash(bun --version)",
+      "Bash(curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs)",
+      "Bash(sh -s -- -y --no-modify-path)",
+      "Bash(npm create *)",
+      "Bash(mv token-tracker *)",
+      "Bash(pkill -f \"TokenTracker\")",
+      "Bash(cargo tauri *)",
+      "Bash(cargo check *)",
+      "Bash(security find-generic-password *)",
+      "Bash(security dump-keychain *)",
+      "Bash(security list-keychains *)",
+      "Bash(sqlite3 '/Users/dannymacmini/Library/Application Support/TokenTracker/db.sqlite' 'SELECT raw_json FROM usage_snapshots WHERE provider_id='\\\\''claude_web'\\\\'' ORDER BY captured_at DESC LIMIT 1;')",
+      "Bash(sqlite3 '/Users/dannymacmini/Library/Application Support/TokenTracker/db.sqlite' 'SELECT provider_id, snapshot_type, tokens_used, tokens_limit, cost_usd, datetime\\(captured_at, '\\\\''unixepoch'\\\\'', '\\\\''localtime'\\\\''\\) as time FROM usage_snapshots WHERE provider_id='\\\\''claude_web'\\\\'' ORDER BY captured_at DESC LIMIT 3;')"
+    ],
+    "additionalDirectories": [
+      "/Users/dannymacmini/Desktop/MacMini_Cty/02_Du_an_ngoai/Token_Tracker/token-tracker"
+    ]
+  }
+}

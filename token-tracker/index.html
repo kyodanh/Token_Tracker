@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TokenTracker — Dev Server</title>
+    <style>
+      body { background: #0f0f0f; color: #e5e5e5; font-family: -apple-system, sans-serif;
+             display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+      .box { text-align: center; max-width: 400px; }
+      h1 { font-size: 1.2rem; color: #f59e0b; margin-bottom: 0.5rem; }
+      p { color: #666; font-size: 0.85rem; line-height: 1.6; }
+      .links { margin-top: 1.5rem; display: flex; gap: 1rem; justify-content: center; }
+      a { background: #1a1a1a; border: 1px solid #2a2a2a; color: #e5e5e5;
+          padding: 0.5rem 1rem; border-radius: 6px; text-decoration: none; font-size: 0.8rem; }
+      a:hover { border-color: #f59e0b; }
+    </style>
+  </head>
+  <body>
+    <div class="box">
+      <h1>🍵 TokenTracker — Dev Server</h1>
+      <p>This is a <strong>native desktop app</strong> — use the tray icon in your macOS menu bar, not this browser window.</p>
+      <p>If the app is running, look for the icon in the top-right of your screen.</p>
+      <div class="links">
+        <a href="/popup.html">Preview Popup UI</a>
+        <a href="/settings.html">Preview Settings UI</a>
+      </div>
+      <p style="margin-top:1rem; font-size:0.75rem; color:#444;">
+        (Tauri backend commands won't work in browser — for UI preview only)
+      </p>
+    </div>
+  </body>
+</html>

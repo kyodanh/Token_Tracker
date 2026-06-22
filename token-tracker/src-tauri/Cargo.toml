@@ -1,0 +1,31 @@
+[package]
+name = "token-tracker"
+version = "0.1.0"
+description = "TokenTracker — AI Token Usage Monitor"
+authors = ["TokenTracker"]
+edition = "2021"
+
+[lib]
+name = "token_tracker_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-opener = "2"
+sqlx = { version = "0.8", features = ["sqlite", "runtime-tokio-rustls"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "cookies", "native-tls"] }
+notify = { version = "6", default-features = false, features = ["macos_fsevent"] }
+chrono = { version = "0.4", features = ["serde"] }
+hmac = "0.12"
+sha2 = "0.10"
+base32 = "0.4"
+log = "0.4"
+dirs = "5"
+anyhow = "1"
+async-trait = "0.1.89"
