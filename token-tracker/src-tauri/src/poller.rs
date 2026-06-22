@@ -59,6 +59,7 @@ async fn do_sync(app: &AppHandle, db: &Db, provider_id: &str) {
         Ok(snap) => {
             if insert_snapshot(db, &snap).await.is_ok() {
                 let _ = app.emit("usage_updated", provider_id);
+                crate::refresh_tray(app, db).await;
             }
         }
         Err(e) if e.to_string() == "session_expired" => {

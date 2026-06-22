@@ -50,6 +50,9 @@ export const api = {
     invoke<LicenseInfo>("activate_license", { key }),
   isPro: () => invoke<boolean>("is_pro"),
 
+  // Tray
+  refreshTray: () => invoke<void>("trigger_tray_refresh"),
+
   // Window
   openSettings: () => invoke<void>("open_settings_window"),
 };

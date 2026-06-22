@@ -7,25 +7,10 @@ interface Props {
   summary: ProviderSummary;
 }
 
-function ProgressBar({ percent, thin }: { percent: number; thin?: boolean }) {
-  const color =
-    percent >= 80 ? "bg-red-500" : percent >= 50 ? "bg-yellow-400" : "bg-green-500";
-  return (
-    <div className={`rounded-full bg-[#2a2a2a] overflow-hidden ${thin ? "h-1 mt-1" : "h-1.5 mt-1.5"}`}>
-      <div
-        className={`h-full rounded-full transition-all duration-500 ${color}`}
-        style={{ width: `${Math.min(percent, 100)}%` }}
-      />
-    </div>
-  );
-}
-
 function formatTime(ts: number) {
-  return new Date(ts).toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  }).toLowerCase();
+  return new Date(ts)
+    .toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })
+    .toLowerCase();
 }
 
 function timeSince(ts: number) {
@@ -46,6 +31,12 @@ function formatResetsAt(isoString: string): string {
   return `resets ${day} at ${h12}:${m}${ampm}`;
 }
 
+function usageColor(pct: number) {
+  if (pct >= 80) return "#ff6b6b";
+  if (pct >= 50) return "#f0a850";
+  return "#3ecf8e";
+}
+
 export function ProviderCard({ summary }: Props) {
   const refresh = usePopupStore((s) => s.refresh);
   const { provider, snapshot, usagePercent, weeklyUsagePercent, weeklyResetsAt } = summary;
@@ -60,115 +51,236 @@ export function ProviderCard({ summary }: Props) {
   };
 
   const pct = usagePercent != null ? Math.round(usagePercent) : null;
-  const pctColor =
-    pct == null ? "text-green-400"
-    : pct >= 80 ? "text-red-400"
-    : pct >= 50 ? "text-yellow-400"
-    : "text-green-400";
-
+  const wpct = weeklyUsagePercent != null ? Math.round(weeklyUsagePercent) : null;
   const capturedLabel = snapshot?.capturedAt ? `today at ${formatTime(snapshot.capturedAt)}` : "";
-  const syncedLabel = provider.lastSyncedAt ? timeSince(provider.lastSyncedAt) : null;
+  const syncedLabel = provider.lastSyncedAt ? timeSince(provider.lastSyncedAt) : "just now";
 
   return (
-    <div className="px-4 py-3 border-b border-[#2a2a2a]">
-      {/* Header row */}
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
-          <span className="text-sm font-semibold" style={{ color: display.color }}>
-            {display.name}
-          </span>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleRefresh}
-            className="text-[#555] hover:text-[#e5e5e5] transition-colors text-base leading-none"
-            title="Refresh"
-          >
-            ↺
-          </button>
-          <span className="text-[10px] text-green-400 font-medium tracking-wide">live</span>
-        </div>
+    <div style={{ padding: "0 16px 14px" }}>
+      {/* Provider row */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, paddingBottom: 12 }}>
+        <span
+          style={{
+            width: 7,
+            height: 7,
+            borderRadius: "50%",
+            background: "#3ecf8e",
+            boxShadow: "0 0 8px rgba(62,207,142,0.7)",
+            flexShrink: 0,
+          }}
+        />
+        <span style={{ fontSize: 13.5, fontWeight: 600, color: "#e8943a" }}>{display.name}</span>
+        <div style={{ flex: 1 }} />
+        <button
+          onClick={handleRefresh}
+          title="Refresh"
+          style={{ background: "none", border: "none", cursor: "pointer", color: "#7a7a7e", padding: 2, display: "flex", alignItems: "center" }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M23 4v6h-6M1 20v-6h6" />
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+          </svg>
+        </button>
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 5,
+            fontSize: 11,
+            fontWeight: 600,
+            color: "#3ecf8e",
+            background: "rgba(62,207,142,0.1)",
+            padding: "3px 8px",
+            borderRadius: 20,
+          }}
+        >
+          live
+        </span>
       </div>
 
-      {snapshot ? (
-        <>
-          {/* Current session block */}
-          <div className="bg-[#181818] rounded-lg px-3 py-2 mb-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-[9px] text-[#555] font-semibold tracking-widest">CURRENT SESSION</span>
-              {capturedLabel && (
-                <span className="text-[9px] text-[#555]">{capturedLabel}</span>
+      {/* Limit card */}
+      <div
+        style={{
+          background: "rgba(255,255,255,0.035)",
+          border: "1px solid rgba(255,255,255,0.06)",
+          borderRadius: 12,
+          overflow: "hidden",
+        }}
+      >
+        {snapshot ? (
+          <>
+            {/* Current session */}
+            <div style={{ padding: "14px 16px 16px" }}>
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+                <span style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: "0.7px", color: "#7a7a7e" }}>
+                  CURRENT SESSION
+                </span>
+                {capturedLabel && (
+                  <span style={{ fontSize: 11, color: "#6a6a6e" }}>{capturedLabel}</span>
+                )}
+              </div>
+
+              {pct != null ? (
+                <>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 8 }}>
+                    <span
+                      style={{
+                        fontSize: 30,
+                        fontWeight: 700,
+                        letterSpacing: -1,
+                        color: usageColor(pct),
+                        fontFamily: "'JetBrains Mono',monospace",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {pct}
+                      <span style={{ fontSize: 16 }}>%</span>
+                    </span>
+                    <span style={{ fontSize: 11.5, color: "#7a7a7e" }}>of session limit used</span>
+                  </div>
+                  <div
+                    style={{
+                      marginTop: 11,
+                      height: 7,
+                      borderRadius: 6,
+                      background: "rgba(255,255,255,0.06)",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: `${Math.min(pct, 100)}%`,
+                        height: "100%",
+                        borderRadius: 6,
+                        background: `linear-gradient(90deg,${usageColor(pct)}99,${usageColor(pct)})`,
+                        boxShadow: `0 0 10px ${usageColor(pct)}80`,
+                        transition: "width 0.5s",
+                      }}
+                    />
+                  </div>
+                </>
+              ) : snapshot.costUsd != null ? (
+                <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 8 }}>
+                  <span
+                    style={{
+                      fontSize: 30,
+                      fontWeight: 700,
+                      letterSpacing: -1,
+                      color: "#3ecf8e",
+                      fontFamily: "'JetBrains Mono',monospace",
+                    }}
+                  >
+                    ${snapshot.costUsd.toFixed(3)}
+                  </span>
+                </div>
+              ) : (
+                <span style={{ fontSize: 12, color: "#6a6a6e", display: "block", marginTop: 8 }}>
+                  Session active · no usage quota exposed
+                </span>
               )}
             </div>
-            {pct != null ? (
-              <div className="mt-0.5">
-                <span className={`text-2xl font-bold leading-none ${pctColor}`}>
-                  {pct}
-                  <span className="text-base font-semibold">%</span>
-                </span>
-                <ProgressBar percent={pct} thin />
-              </div>
-            ) : snapshot.costUsd != null ? (
-              <span className="text-lg font-bold text-[#e5e5e5] mt-0.5 block">
-                ${snapshot.costUsd.toFixed(3)}
+
+            {/* Weekly limit */}
+            {wpct != null && (
+              <>
+                <div style={{ height: 1, background: "rgba(255,255,255,0.06)" }} />
+                <div style={{ padding: "14px 16px 16px" }}>
+                  <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+                    <span style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: "0.7px", color: "#7a7a7e" }}>
+                      WEEKLY LIMIT
+                    </span>
+                    {weeklyResetsAt && (
+                      <span style={{ fontSize: 11, color: "#6a6a6e" }}>{formatResetsAt(weeklyResetsAt)}</span>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 8 }}>
+                    <span
+                      style={{
+                        fontSize: 30,
+                        fontWeight: 700,
+                        letterSpacing: -1,
+                        color: usageColor(wpct),
+                        fontFamily: "'JetBrains Mono',monospace",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {wpct}
+                      <span style={{ fontSize: 16 }}>%</span>
+                    </span>
+                    <span style={{ fontSize: 11.5, color: "#7a7a7e" }}>of weekly allowance used</span>
+                  </div>
+                  <div
+                    style={{
+                      marginTop: 11,
+                      height: 7,
+                      borderRadius: 6,
+                      background: "rgba(255,255,255,0.06)",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: `${Math.min(wpct, 100)}%`,
+                        height: "100%",
+                        borderRadius: 6,
+                        background: `linear-gradient(90deg,${usageColor(wpct)}99,${usageColor(wpct)})`,
+                        boxShadow: `0 0 10px ${usageColor(wpct)}80`,
+                        transition: "width 0.5s",
+                      }}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Card footer */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "8px 16px",
+                background: "rgba(255,255,255,0.02)",
+                borderTop: "1px solid rgba(255,255,255,0.06)",
+              }}
+            >
+              <span style={{ fontSize: 10.5, color: "#6a6a6e" }}>updated {syncedLabel}</span>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 10.5, color: "#3ecf8e" }}>
+                <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#3ecf8e" }} />
+                {display.name.toLowerCase().replace(/\s+/g, ".")}.live
               </span>
-            ) : (
-              <span className="text-xs text-[#555] mt-1 block">
-                Session active · no usage quota exposed
-              </span>
+            </div>
+          </>
+        ) : (
+          <div
+            style={{
+              padding: "14px 16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <span style={{ fontSize: 12, color: "#6a6a6e" }}>
+              {provider.id === "claude_code" ? "Reading ~/.claude/logs…" : "Not connected"}
+            </span>
+            {provider.id !== "claude_code" && (
+              <button
+                onClick={() => api.openSettings()}
+                style={{
+                  fontSize: 12,
+                  color: "#f0a850",
+                  fontWeight: 600,
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                }}
+              >
+                Connect →
+              </button>
             )}
           </div>
-
-          {/* Weekly limit block */}
-          {weeklyUsagePercent != null && (
-            <div className="bg-[#181818] rounded-lg px-3 py-2 mb-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[9px] text-[#555] font-semibold tracking-widest">WEEKLY LIMIT</span>
-              </div>
-              <div className="mt-0.5">
-                {(() => {
-                  const wp = Math.round(weeklyUsagePercent);
-                  const wColor = wp >= 80 ? "text-red-400" : wp >= 50 ? "text-yellow-400" : "text-green-400";
-                  return (
-                    <>
-                      <span className={`text-2xl font-bold leading-none ${wColor}`}>
-                        {wp}<span className="text-base font-semibold">%</span>
-                      </span>
-                      <ProgressBar percent={wp} thin />
-                    </>
-                  );
-                })()}
-              </div>
-              {weeklyResetsAt && (
-                <p className="text-[9px] text-[#555] mt-1">{formatResetsAt(weeklyResetsAt)}</p>
-              )}
-            </div>
-          )}
-
-          {/* Footer row */}
-          <div className="flex justify-between items-center mt-1">
-            <span className="text-[10px] text-[#555]">{syncedLabel}</span>
-            <span className="text-[10px] text-green-400 font-medium">
-              {display.name.toLowerCase().replace(/\s+/g, ".")}.live
-            </span>
-          </div>
-        </>
-      ) : (
-        <div className="mt-1 flex items-center justify-between">
-          <span className="text-xs text-[#555]">
-            {provider.id === "claude_code" ? "Reading ~/.claude/logs..." : "Not connected"}
-          </span>
-          {provider.id !== "claude_code" && (
-            <button
-              onClick={() => api.openSettings()}
-              className="text-xs text-amber-400 hover:text-amber-300 transition-colors"
-            >
-              Connect →
-            </button>
-          )}
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

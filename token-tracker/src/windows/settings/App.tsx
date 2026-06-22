@@ -31,9 +31,9 @@ export function App() {
   };
 
   return (
-    <div className="flex h-screen bg-[#0f0f0f] text-[#e5e5e5] overflow-hidden">
+    <div style={{ display: "flex", height: "100vh", background: "#1a1a1c", color: "#e9e9ec", overflow: "hidden" }}>
       <Sidebar active={section} onChange={setSection} isPro={isPro} />
-      <main className="flex-1 overflow-hidden">
+      <main style={{ flex: 1, overflow: "hidden" }}>
         {renderPanel()}
       </main>
     </div>

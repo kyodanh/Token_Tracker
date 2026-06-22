@@ -36,6 +36,9 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     const snake = key.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
     await api.setSetting(snake, String(value));
     set((s) => ({ settings: { ...s.settings, [key]: value } }));
+    if (key === "iconStyle") {
+      api.refreshTray().catch(() => {});
+    }
   },
   setLicenseInfo: (info) => set({ licenseInfo: info }),
 }));

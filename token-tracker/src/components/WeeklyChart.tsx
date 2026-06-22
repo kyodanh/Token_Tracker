@@ -1,6 +1,4 @@
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
-} from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import type { DailySpend } from "../lib/types";
 
 interface Props {
@@ -19,7 +17,7 @@ function buildChartData(weeklySpend: DailySpend[]) {
     const cost = weeklySpend
       .filter((s) => s.date === dateStr)
       .reduce((sum, s) => sum + (s.costUsd ?? 0), 0);
-    return { label: DAYS[d.getDay()], cost };
+    return { label: DAYS[d.getDay()].charAt(0), cost, isToday: i === 6 };
   });
 }
 
@@ -27,34 +25,51 @@ export function WeeklyChart({ weeklySpend, totalCost }: Props) {
   const data = buildChartData(weeklySpend);
 
   return (
-    <div className="px-4 py-3 border-b border-[#2a2a2a]">
-      <div className="flex justify-between items-center mb-2">
-        <span className="text-[10px] text-[#666] font-semibold tracking-wide">7-DAY SPEND</span>
-        <span className="text-sm text-amber-400 font-semibold">${totalCost.toFixed(2)}</span>
+    <div
+      style={{
+        margin: "14px 16px 0",
+        padding: "13px 16px 16px",
+        background: "rgba(255,255,255,0.035)",
+        border: "1px solid rgba(255,255,255,0.06)",
+        borderRadius: 12,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12 }}>
+        <span style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: "0.7px", color: "#7a7a7e" }}>
+          7-DAY SPEND
+        </span>
+        <span style={{ fontSize: 15, fontWeight: 700, color: "#f0a850", fontFamily: "'JetBrains Mono',monospace" }}>
+          ${totalCost.toFixed(2)}
+        </span>
       </div>
-      <ResponsiveContainer width="100%" height={80}>
-        <BarChart data={data} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
+
+      <ResponsiveContainer width="100%" height={56}>
+        <BarChart data={data} margin={{ top: 0, right: 0, bottom: 0, left: 0 }} barCategoryGap="30%">
           <XAxis
             dataKey="label"
-            tick={{ fill: "#666", fontSize: 10 }}
+            tick={{ fill: "#6a6a6e", fontSize: 10 }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis hide />
           <Tooltip
             contentStyle={{
-              background: "#1a1a1a",
-              border: "1px solid #2a2a2a",
-              borderRadius: 6,
+              background: "#1e1e20",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: 8,
               fontSize: 11,
-              color: "#e5e5e5",
+              color: "#e9e9ec",
             }}
             formatter={(v: unknown) => [`$${(v as number).toFixed(3)}`, "Cost"]}
-            labelStyle={{ color: "#666" }}
+            labelStyle={{ color: "#7a7a7e" }}
+            cursor={{ fill: "rgba(255,255,255,0.04)" }}
           />
-          <Bar dataKey="cost" radius={[2, 2, 0, 0]}>
-            {data.map((_, i) => (
-              <Cell key={i} fill="#b45309" opacity={i === 6 ? 1 : 0.6} />
+          <Bar dataKey="cost" radius={[4, 4, 2, 2]}>
+            {data.map((entry, i) => (
+              <Cell
+                key={i}
+                fill={entry.isToday ? "#f0a850" : "rgba(232,148,58,0.5)"}
+              />
             ))}
           </Bar>
         </BarChart>
