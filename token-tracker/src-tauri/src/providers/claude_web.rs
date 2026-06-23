@@ -4,7 +4,19 @@ use serde::Deserialize;
 use crate::models::NewSnapshot;
 use super::Provider;
 
-pub struct ClaudeWebProvider;
+pub struct ClaudeWebProvider {
+    provider_id: String,
+}
+
+impl ClaudeWebProvider {
+    pub fn primary() -> Self {
+        Self { provider_id: "claude_web".to_string() }
+    }
+
+    pub fn new(id: impl Into<String>) -> Self {
+        Self { provider_id: id.into() }
+    }
+}
 
 #[derive(Deserialize, Debug, Default)]
 struct OrgEntry {
@@ -70,7 +82,7 @@ fn extract_usage_from_capabilities(caps: &serde_json::Value) -> (Option<i64>, Op
 #[async_trait]
 impl Provider for ClaudeWebProvider {
     fn id(&self) -> &str {
-        "claude_web"
+        &self.provider_id
     }
 
     async fn fetch(&self, secret: &str) -> Result<NewSnapshot> {
@@ -215,7 +227,7 @@ impl Provider for ClaudeWebProvider {
         let tokens_limit = rate_tokens_limit.or(cap_tokens_limit).or(acct_tokens_limit).or(billing_tokens_limit);
 
         Ok(NewSnapshot {
-            provider_id: "claude_web".into(),
+            provider_id: self.provider_id.clone(),
             snapshot_type: "session".into(),
             tokens_used,
             tokens_limit,

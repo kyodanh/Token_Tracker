@@ -53,6 +53,24 @@ export const api = {
 
   // Claude Code
   getClaudePlan: () => invoke<string>("get_claude_plan"),
+  addClaudeCodeAccount: (label: string, configPath: string) =>
+    invoke<string>("add_claude_code_account", { label, configPath }),
+  removeClaudeCodeAccount: (id: string) =>
+    invoke<void>("remove_claude_code_account", { id }),
+  getClaudeCodeConfigPath: (id: string) =>
+    invoke<string | null>("get_claude_code_config_path", { id }),
+  startClaudeLogin: (label: string) =>
+    invoke<string>("start_claude_login", { label }),
+  checkClaudeLoginStatus: (configPath: string) =>
+    invoke<{ loggedIn: boolean; email: string | null; orgName: string | null; subscriptionType: string | null; configPath: string }>("check_claude_login_status", { configPath }),
+  scanClaudeCodeDirs: () =>
+    invoke<Array<{ loggedIn: boolean; email: string | null; orgName: string | null; subscriptionType: string | null; configPath: string }>>("scan_claude_code_dirs"),
+
+  // Claude Web
+  addClaudeWebAccount: (label: string, sessionKey: string) =>
+    invoke<string>("add_claude_web_account", { label, sessionKey }),
+  removeClaudeWebAccount: (id: string) =>
+    invoke<void>("remove_claude_web_account", { id }),
 
   // Tray
   refreshTray: () => invoke<void>("trigger_tray_refresh"),

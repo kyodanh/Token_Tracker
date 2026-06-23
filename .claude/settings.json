@@ -30,7 +30,18 @@
       "Bash(~/.cargo/bin/cargo check *)",
       "Bash(rustup target *)",
       "Bash(rustup show *)",
-      "Bash(chmod +x /Users/dannymacmini/Desktop/MacMini_Cty/02_Du_an_ngoai/Token_Tracker/build.sh)"
+      "Bash(chmod +x /Users/dannymacmini/Desktop/MacMini_Cty/02_Du_an_ngoai/Token_Tracker/build.sh)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Skill(run)",
+      "Skill(run:*)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(list\\(d.keys\\(\\)\\)[:10]\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.loads\\(sys.stdin.read\\(\\)\\); print\\(json.dumps\\({k: d[k] for k in list\\(d.keys\\(\\)\\)[:8]}, indent=2\\)\\)\")",
+      "Bash(awk '{print $NF}')",
+      "Bash(claude --version)",
+      "Bash(claude auth *)",
+      "Bash(CLAUDE_CONFIG_DIR=/tmp/test-claude-config claude auth status)",
+      "Bash(pkill -f \"token-tracker\")",
+      "Bash(pkill -f \"tauri dev\")"
     ],
     "additionalDirectories": [
       "/Users/dannymacmini/Desktop/MacMini_Cty/02_Du_an_ngoai/Token_Tracker/token-tracker"

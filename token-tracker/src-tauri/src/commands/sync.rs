@@ -15,13 +15,31 @@ use crate::{
 };
 
 pub fn provider_impl(id: &str) -> Option<Box<dyn Provider>> {
+    if id == "claude_web" {
+        return Some(Box::new(ClaudeWebProvider::primary()));
+    }
+    if id.starts_with("claude_web_") {
+        return Some(Box::new(ClaudeWebProvider::new(id)));
+    }
     match id {
-        "claude_web" => Some(Box::new(ClaudeWebProvider)),
-        "claude_code" => Some(Box::new(ClaudeCodeProvider)),
         "openai" => Some(Box::new(OpenAiProvider)),
         "openrouter" => Some(Box::new(OpenRouterProvider)),
         "chatgpt_web" => Some(Box::new(ChatGptWebProvider)),
         _ => None,
+    }
+}
+
+async fn get_config_dir(db: &Db, provider_id: &str) -> std::path::PathBuf {
+    let key = format!("{}_config_path", provider_id);
+    let path: Option<String> = sqlx::query_scalar("SELECT value FROM settings WHERE key = ?")
+        .bind(&key)
+        .fetch_optional(db)
+        .await
+        .ok()
+        .flatten();
+    match path {
+        Some(p) if !p.is_empty() => std::path::PathBuf::from(p),
+        _ => dirs::home_dir().unwrap_or_default().join(".claude"),
     }
 }
 
@@ -31,10 +49,16 @@ pub async fn sync_provider(
     app: AppHandle,
     db: State<'_, Db>,
 ) -> Result<(), String> {
-    let impl_ = provider_impl(&provider_id)
-        .ok_or_else(|| format!("Unknown provider: {provider_id}"))?;
+    let impl_: Box<dyn Provider> = if provider_id == "claude_code" {
+        Box::new(ClaudeCodeProvider::primary())
+    } else if provider_id.starts_with("claude_code_") {
+        let config_dir = get_config_dir(db.inner(), &provider_id).await;
+        Box::new(ClaudeCodeProvider::with_config(provider_id.clone(), config_dir))
+    } else {
+        provider_impl(&provider_id).ok_or_else(|| format!("Unknown provider: {provider_id}"))?
+    };
 
-    let secret = if provider_id == "claude_code" {
+    let secret = if provider_id.starts_with("claude_code") {
         String::new()
     } else {
         keychain::get_secret(&provider_id)

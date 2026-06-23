@@ -14,6 +14,35 @@ use crate::{
 
 const REMINDER_THRESHOLDS: &[i64] = &[7, 3, 1];
 
+async fn get_claude_code_provider_ids(db: &Db) -> Vec<String> {
+    sqlx::query(
+        "SELECT id FROM providers WHERE enabled = 1 AND (id = 'claude_code' OR id LIKE 'claude_code_%')"
+    )
+    .fetch_all(db)
+    .await
+    .unwrap_or_default()
+    .iter()
+    .map(|r| r.get("id"))
+    .collect()
+}
+
+async fn get_config_dir_for_id(db: &Db, id: &str) -> std::path::PathBuf {
+    if id == "claude_code" {
+        return dirs::home_dir().unwrap_or_default().join(".claude");
+    }
+    let key = format!("{}_config_path", id);
+    let path: Option<String> = sqlx::query_scalar("SELECT value FROM settings WHERE key = ?")
+        .bind(&key)
+        .fetch_optional(db)
+        .await
+        .ok()
+        .flatten();
+    match path {
+        Some(p) if !p.is_empty() => std::path::PathBuf::from(p),
+        _ => dirs::home_dir().unwrap_or_default().join(".claude"),
+    }
+}
+
 pub fn start(app: AppHandle, db: Db) {
     // Fast loop: claude_code reads local files, safe to poll every 60 seconds
     let app2 = app.clone();
@@ -21,7 +50,10 @@ pub fn start(app: AppHandle, db: Db) {
     tauri::async_runtime::spawn(async move {
         backfill_claude_code(&db2).await;
         loop {
-            do_sync(&app2, &db2, "claude_code").await;
+            let ids = get_claude_code_provider_ids(&db2).await;
+            for id in ids {
+                do_sync(&app2, &db2, &id).await;
+            }
             tokio::time::sleep(Duration::from_secs(60)).await;
         }
     });
@@ -48,29 +80,36 @@ pub fn start(app: AppHandle, db: Db) {
 }
 
 async fn backfill_claude_code(db: &Db) {
-    use crate::providers::claude_code::backfill_history;
-    let Ok(history) = backfill_history(7) else { return };
-    for (date, tokens, cost) in history {
-        let _ = sqlx::query(
-            "INSERT INTO daily_spend (provider_id, date, tokens_used, cost_usd) VALUES (?, ?, ?, ?)
-             ON CONFLICT(provider_id, date) DO UPDATE SET
-               tokens_used = MAX(excluded.tokens_used, daily_spend.tokens_used),
-               cost_usd    = MAX(excluded.cost_usd,    daily_spend.cost_usd)"
-        )
-        .bind("claude_code")
-        .bind(&date)
-        .bind(tokens)
-        .bind(cost)
-        .execute(db)
-        .await;
+    use crate::providers::claude_code::backfill_history_for_dir;
+    let ids = get_claude_code_provider_ids(db).await;
+    for id in ids {
+        let config_dir = get_config_dir_for_id(db, &id).await;
+        let projects_dir = config_dir.join("projects");
+        let Ok(history) = backfill_history_for_dir(&projects_dir, 7) else { continue };
+        for (date, tokens, cost) in history {
+            let _ = sqlx::query(
+                "INSERT INTO daily_spend (provider_id, date, tokens_used, cost_usd) VALUES (?, ?, ?, ?)
+                 ON CONFLICT(provider_id, date) DO UPDATE SET
+                   tokens_used = MAX(excluded.tokens_used, daily_spend.tokens_used),
+                   cost_usd    = MAX(excluded.cost_usd,    daily_spend.cost_usd)"
+            )
+            .bind(&id)
+            .bind(&date)
+            .bind(tokens)
+            .bind(cost)
+            .execute(db)
+            .await;
+        }
     }
 }
 
 /// Sync all non-claude_code providers (network calls, run every 5 min).
 async fn poll_network(app: &AppHandle, db: &Db) {
-    let rows = match sqlx::query("SELECT id FROM providers WHERE enabled = 1 AND id != 'claude_code'")
-        .fetch_all(db)
-        .await
+    let rows = match sqlx::query(
+        "SELECT id FROM providers WHERE enabled = 1 AND id NOT LIKE 'claude_code%'"
+    )
+    .fetch_all(db)
+    .await
     {
         Ok(r) => r,
         Err(_) => return,
@@ -111,7 +150,6 @@ async fn check_renewal_reminders(db: &Db) {
         let days_remaining = diff_secs / 86400;
 
         for &threshold in REMINDER_THRESHOLDS {
-            // Trigger on the exact threshold day (within a ±12h window)
             if days_remaining != threshold {
                 continue;
             }
@@ -130,7 +168,6 @@ async fn check_renewal_reminders(db: &Db) {
                 continue;
             }
 
-            // Build notification content
             let label = plan_name.clone().unwrap_or_else(|| provider_id.clone());
             let cost_str = cost_usd.map(|c| format!("${:.2}/mo", c)).unwrap_or_default();
             let renewal_date = chrono::DateTime::from_timestamp(next_reset_at, 0)
@@ -146,7 +183,6 @@ async fn check_renewal_reminders(db: &Db) {
                 renewal_date
             );
 
-            // Send system notification (platform-specific)
             #[cfg(target_os = "macos")]
             {
                 let script = format!(
@@ -177,7 +213,6 @@ async fn check_renewal_reminders(db: &Db) {
                     .spawn();
             }
 
-            // Mark as sent
             let _ = sqlx::query(
                 "INSERT OR REPLACE INTO settings (key, value) VALUES (?, '1')"
             )
@@ -189,16 +224,23 @@ async fn check_renewal_reminders(db: &Db) {
 }
 
 async fn do_sync(app: &AppHandle, db: &Db, provider_id: &str) {
-    let impl_: Box<dyn Provider> = match provider_id {
-        "claude_web" => Box::new(ClaudeWebProvider),
-        "claude_code" => Box::new(ClaudeCodeProvider),
-        "openai" => Box::new(OpenAiProvider),
-        "openrouter" => Box::new(OpenRouterProvider),
-        "chatgpt_web" => Box::new(ChatGptWebProvider),
-        _ => return,
+    let impl_: Box<dyn Provider> = if provider_id == "claude_code" {
+        Box::new(ClaudeCodeProvider::primary())
+    } else if provider_id.starts_with("claude_code_") {
+        let config_dir = get_config_dir_for_id(db, provider_id).await;
+        Box::new(ClaudeCodeProvider::with_config(provider_id.to_string(), config_dir))
+    } else {
+        match provider_id {
+            "claude_web" => Box::new(ClaudeWebProvider::primary()),
+            id if id.starts_with("claude_web_") => Box::new(ClaudeWebProvider::new(id)),
+            "openai" => Box::new(OpenAiProvider),
+            "openrouter" => Box::new(OpenRouterProvider),
+            "chatgpt_web" => Box::new(ChatGptWebProvider),
+            _ => return,
+        }
     };
 
-    let secret = if provider_id == "claude_code" {
+    let secret = if provider_id.starts_with("claude_code") {
         String::new()
     } else {
         match keychain::get_secret(provider_id) {
@@ -209,7 +251,6 @@ async fn do_sync(app: &AppHandle, db: &Db, provider_id: &str) {
 
     match impl_.fetch(&secret).await {
         Ok(snap) => {
-            // Persist account label to settings table before inserting snapshot
             if let Some(ref label) = snap.account_label {
                 let key = format!("{}_account", provider_id);
                 let _ = sqlx::query(
