@@ -11,12 +11,10 @@ on:
         required: true
         default: '1.0.0'
 
-# Required for creating/editing releases and pushing tags
 permissions:
   contents: write
 
 jobs:
-  # Step 1: Create (or ensure) the release tag exists
   prepare:
     runs-on: ubuntu-latest
     outputs:
@@ -43,7 +41,6 @@ jobs:
           TAG="${{ steps.resolve.outputs.tag }}"
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          # Only create the tag if it doesn't exist yet
           if ! git rev-parse "$TAG" >/dev/null 2>&1; then
             git tag "$TAG"
             git push origin "$TAG"
@@ -52,19 +49,20 @@ jobs:
             echo "Tag $TAG already exists"
           fi
 
-  # Step 2: Build for each platform and upload to the release
   build:
     needs: prepare
     strategy:
       fail-fast: false
       matrix:
         include:
+          # Universal DMG — runs on arm64 runner, produces fat binary for M1+Intel
           - platform: macos-latest
-            target: aarch64-apple-darwin
-          - platform: macos-13
-            target: x86_64-apple-darwin
+            target: universal-apple-darwin
+            extra_targets: x86_64-apple-darwin
+          # Windows 64-bit installer
           - platform: windows-latest
             target: x86_64-pc-windows-msvc
+            extra_targets: ''
 
     runs-on: ${{ matrix.platform }}
 
@@ -78,10 +76,10 @@ jobs:
           cache: 'npm'
           cache-dependency-path: token-tracker/package-lock.json
 
-      - name: Install Rust
+      - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.target }}
+          targets: ${{ matrix.extra_targets }}
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
@@ -106,8 +104,7 @@ jobs:
             ### Downloads
             | Platform | File |
             |----------|------|
-            | macOS Apple Silicon (M1/M2/M3) | `TokenTracker_*_aarch64.dmg` |
-            | macOS Intel | `TokenTracker_*_x64.dmg` |
+            | macOS (Apple Silicon + Intel) | `TokenTracker_*_universal.dmg` |
             | Windows 64-bit | `TokenTracker_*_x64-setup.exe` |
 
             ### Hướng dẫn cài đặt
