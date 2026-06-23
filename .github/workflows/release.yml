@@ -7,25 +7,64 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version (e.g. 1.0.0)'
+        description: 'Version to release (e.g. 1.0.0)'
         required: true
         default: '1.0.0'
 
+# Required for creating/editing releases and pushing tags
+permissions:
+  contents: write
+
 jobs:
+  # Step 1: Create (or ensure) the release tag exists
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.resolve.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve tag name
+        id: resolve
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="v${{ inputs.version }}"
+          else
+            TAG="${{ github.ref_name }}"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Resolved tag: $TAG"
+
+      - name: Create tag (workflow_dispatch only)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          TAG="${{ steps.resolve.outputs.tag }}"
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Only create the tag if it doesn't exist yet
+          if ! git rev-parse "$TAG" >/dev/null 2>&1; then
+            git tag "$TAG"
+            git push origin "$TAG"
+            echo "Created and pushed tag $TAG"
+          else
+            echo "Tag $TAG already exists"
+          fi
+
+  # Step 2: Build for each platform and upload to the release
   build:
+    needs: prepare
     strategy:
       fail-fast: false
       matrix:
         include:
           - platform: macos-latest
             target: aarch64-apple-darwin
-            artifact: TokenTracker_*_aarch64.dmg
           - platform: macos-13
             target: x86_64-apple-darwin
-            artifact: TokenTracker_*_x64.dmg
           - platform: windows-latest
             target: x86_64-pc-windows-msvc
-            artifact: TokenTracker_*_x64-setup.exe
 
     runs-on: ${{ matrix.platform }}
 
@@ -53,34 +92,27 @@ jobs:
         run: npm ci
         working-directory: token-tracker
 
-      - name: Install OpenSSL (Windows)
-        if: matrix.platform == 'windows-latest'
-        run: |
-          choco install openssl -y
-          echo "OPENSSL_DIR=C:\Program Files\OpenSSL-Win64" >> $env:GITHUB_ENV
-
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           projectPath: token-tracker
-          tagName: ${{ github.ref_name }}
-          releaseName: 'TokenTracker ${{ github.ref_name }}'
+          tagName: ${{ needs.prepare.outputs.tag }}
+          releaseName: 'TokenTracker ${{ needs.prepare.outputs.tag }}'
           releaseBody: |
-            ## TokenTracker ${{ github.ref_name }}
+            ## TokenTracker ${{ needs.prepare.outputs.tag }}
 
             ### Downloads
             | Platform | File |
             |----------|------|
-            | macOS (Apple Silicon) | `TokenTracker_*_aarch64.dmg` |
-            | macOS (Intel) | `TokenTracker_*_x64.dmg` |
+            | macOS Apple Silicon (M1/M2/M3) | `TokenTracker_*_aarch64.dmg` |
+            | macOS Intel | `TokenTracker_*_x64.dmg` |
             | Windows 64-bit | `TokenTracker_*_x64-setup.exe` |
 
-            ### Installation
-            - **macOS**: Open DMG → drag to Applications → right-click → Open (first launch)
-            - **Windows**: Run installer as Administrator
-
+            ### Hướng dẫn cài đặt
+            - **macOS**: Mở DMG → kéo vào Applications → **right-click → Open** lần đầu để bỏ qua Gatekeeper
+            - **Windows**: Chạy file `-setup.exe`, chọn "More info → Run anyway" nếu SmartScreen chặn
           releaseDraft: true
           prerelease: false
           args: --target ${{ matrix.target }}
