@@ -105,6 +105,15 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
   );
 }
 
+const CLAUDE_PLANS = [
+  { id: "free",       label: "Free",    sub: "Limited",         cost: null },
+  { id: "pro",        label: "Pro",     sub: "$20/mo",          cost: 20 },
+  { id: "team",       label: "Team",    sub: "$25/user/mo",     cost: 25 },
+  { id: "max_5x",     label: "Max 5x",  sub: "$100/mo",         cost: 100 },
+  { id: "max_20x",    label: "Max 20x", sub: "$200/mo",         cost: 200 },
+  { id: "enterprise", label: "Enterprise", sub: "Custom",       cost: null },
+];
+
 export function ProvidersPanel() {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [credentials, setCredentials] = useState<Record<string, boolean>>({});
@@ -114,6 +123,7 @@ export function ProvidersPanel() {
   const [syncing, setSyncing] = useState<string | null>(null);
   const [syncStatus, setSyncStatus] = useState<Record<string, "ok" | "error">>({});
   const [syncError, setSyncError] = useState<Record<string, string>>({});
+  const [detectedPlan, setDetectedPlan] = useState<string>("unknown");
 
   useEffect(() => { load(); }, []);
 
@@ -125,6 +135,8 @@ export function ProvidersPanel() {
       creds[p.id] = p.id === "claude_code" ? true : await api.hasProviderSecret(p.id);
     }
     setCredentials(creds);
+    const plan = await api.getClaudePlan();
+    setDetectedPlan(plan);
   };
 
   const toggleEnabled = async (id: string, enabled: boolean) => {
@@ -387,15 +399,62 @@ export function ProvidersPanel() {
 
               {/* claude_code auto-detected */}
               {p.id === "claude_code" && (
-                <div
-                  style={{
-                    marginTop: 10,
-                    fontSize: 12,
-                    color: "#8a8a8e",
-                    fontStyle: "italic",
-                  }}
-                >
-                  Auto-detected from local Claude Code installation
+                <div style={{ marginTop: 12, borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: 12 }}>
+                  {/* Auto-detected badge */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+                    <span style={{
+                      display: "inline-flex", alignItems: "center", justifyContent: "center",
+                      width: 16, height: 16, borderRadius: "50%",
+                      background: "rgba(62,207,142,0.18)", flexShrink: 0,
+                    }}>
+                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#3ecf8e" strokeWidth="3">
+                        <path d="M20 6L9 17l-5-5" />
+                      </svg>
+                    </span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: "#3ecf8e" }}>
+                      Auto-detected — reading JSONL files from ~/.claude/projects/
+                    </span>
+                  </div>
+
+                  {/* Plan selector */}
+                  <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.5px", color: "#6a6a6e", marginBottom: 7 }}>
+                    YOUR CLAUDE PLAN
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {CLAUDE_PLANS.filter(pl => pl.id !== "enterprise" || detectedPlan === "enterprise").map((pl) => {
+                      const isActive = detectedPlan === pl.id;
+                      return (
+                        <div
+                          key={pl.id}
+                          style={{
+                            borderRadius: 8,
+                            padding: "6px 10px",
+                            background: isActive
+                              ? "linear-gradient(180deg,#f0a850,#e8943a)"
+                              : "rgba(255,255,255,0.05)",
+                            border: isActive
+                              ? "1px solid #f0a850"
+                              : "1px solid rgba(255,255,255,0.09)",
+                            cursor: "default",
+                            minWidth: 52,
+                            textAlign: "center",
+                          }}
+                        >
+                          <div style={{ fontSize: 12.5, fontWeight: 700, color: isActive ? "#000" : "#c0c0c4", lineHeight: 1.2 }}>
+                            {pl.label}
+                          </div>
+                          <div style={{ fontSize: 10, color: isActive ? "#3a2800" : "#6a6a6e", marginTop: 2, lineHeight: 1 }}>
+                            {pl.sub}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {detectedPlan === "unknown" && (
+                      <span style={{ fontSize: 11.5, color: "#6a6a6e", alignSelf: "center" }}>
+                        Plan not detected
+                      </span>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

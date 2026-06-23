@@ -22,7 +22,11 @@ fn row_to_snapshot(r: &sqlx::sqlite::SqliteRow) -> UsageSnapshot {
 #[tauri::command]
 pub async fn get_today_summary(db: State<'_, Db>) -> Result<TodaySummary, String> {
     let providers = sqlx::query(
-        "SELECT id, name, enabled, keychain_key, last_synced_at, created_at FROM providers WHERE enabled = 1"
+        "SELECT p.id, p.name, p.enabled, p.keychain_key, p.last_synced_at, p.created_at,
+                s.value as account_label
+         FROM providers p
+         LEFT JOIN settings s ON s.key = p.id || '_account'
+         WHERE p.enabled = 1"
     )
     .fetch_all(db.inner())
     .await
@@ -78,6 +82,7 @@ pub async fn get_today_summary(db: State<'_, Db>) -> Result<TodaySummary, String
                 keychain_key: p.get("keychain_key"),
                 last_synced_at: p.get("last_synced_at"),
                 created_at: p.get::<Option<i64>, _>("created_at").unwrap_or(0),
+                account_label: p.get("account_label"),
             },
             snapshot,
             usage_percent,
@@ -176,6 +181,47 @@ pub async fn delete_subscription(id: i64, db: State<'_, Db>) -> Result<(), Strin
         .await
         .map_err(|e| e.to_string())?;
     Ok(())
+}
+
+#[tauri::command]
+pub async fn check_and_advance_resets(db: State<'_, Db>) -> Result<Vec<i64>, String> {
+    use sqlx::Row;
+    let now = Local::now().timestamp();
+
+    let rows = sqlx::query(
+        "SELECT id, billing_cycle, next_reset_at FROM subscriptions WHERE next_reset_at IS NOT NULL AND next_reset_at <= ?"
+    )
+    .bind(now)
+    .fetch_all(db.inner())
+    .await
+    .map_err(|e| e.to_string())?;
+
+    let mut reset_ids: Vec<i64> = Vec::new();
+
+    for row in &rows {
+        let id: i64 = row.get("id");
+        let billing_cycle: Option<String> = row.get("billing_cycle");
+        let next_reset_at: Option<i64> = row.get("next_reset_at");
+
+        if let Some(mut ts) = next_reset_at {
+            let interval_secs: i64 = match billing_cycle.as_deref() {
+                Some("annual") => 365 * 24 * 3600,
+                _ => 30 * 24 * 3600,
+            };
+            while ts <= now {
+                ts += interval_secs;
+            }
+            sqlx::query("UPDATE subscriptions SET next_reset_at = ? WHERE id = ?")
+                .bind(ts)
+                .bind(id)
+                .execute(db.inner())
+                .await
+                .map_err(|e| e.to_string())?;
+            reset_ids.push(id);
+        }
+    }
+
+    Ok(reset_ids)
 }
 
 pub async fn insert_snapshot(db: &Db, snap: &crate::models::NewSnapshot) -> anyhow::Result<()> {

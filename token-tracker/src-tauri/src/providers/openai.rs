@@ -59,6 +59,7 @@ impl Provider for OpenAiProvider {
             tokens_limit: None,
             cost_usd: Some(cost),
             raw_json: Some(raw),
+            account_label: None,
         })
     }
 }

@@ -7,7 +7,33 @@ export function usePolling() {
 
   useEffect(() => {
     refresh();
-    const interval = setInterval(refresh, 5 * 60 * 1000);
+
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+
+    const startInterval = () => {
+      if (intervalId !== null) return;
+      intervalId = setInterval(refresh, 5 * 60 * 1000);
+    };
+
+    const stopInterval = () => {
+      if (intervalId !== null) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+    };
+
+    // Pause polling when popup is hidden — resumes with fresh data on re-open
+    const handleVisibility = () => {
+      if (document.hidden) {
+        stopInterval();
+      } else {
+        refresh();
+        startInterval();
+      }
+    };
+
+    startInterval();
+    document.addEventListener("visibilitychange", handleVisibility);
 
     const unlistenPromises = [
       listen("usage_updated", () => refresh()),
@@ -15,7 +41,8 @@ export function usePolling() {
     ];
 
     return () => {
-      clearInterval(interval);
+      stopInterval();
+      document.removeEventListener("visibilitychange", handleVisibility);
       unlistenPromises.forEach((p) => p.then((fn) => fn()));
     };
   }, []);

@@ -9,6 +9,7 @@ pub struct Provider {
     pub keychain_key: Option<String>,
     pub last_synced_at: Option<i64>,
     pub created_at: i64,
+    pub account_label: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -79,4 +80,6 @@ pub struct NewSnapshot {
     pub tokens_limit: Option<i64>,
     pub cost_usd: Option<f64>,
     pub raw_json: Option<String>,
+    /// Account email/name to store in the settings table for display purposes
+    pub account_label: Option<String>,
 }

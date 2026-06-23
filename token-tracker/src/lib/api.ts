@@ -22,9 +22,10 @@ export const api = {
 
   // Subscriptions
   getSubscriptions: () => invoke<Subscription[]>("get_subscriptions"),
-  upsertSubscription: (sub: Omit<Subscription, "id">) =>
-    invoke<void>("upsert_subscription", { sub: { id: 0, ...sub } }),
+  upsertSubscription: (sub: Omit<Subscription, "id"> & { id?: number }) =>
+    invoke<void>("upsert_subscription", { sub: { id: sub.id ?? 0, ...sub } }),
   deleteSubscription: (id: number) => invoke<void>("delete_subscription", { id }),
+  checkAndAdvanceResets: () => invoke<number[]>("check_and_advance_resets"),
 
   // Settings
   getSettings: () => invoke<Record<string, string>>("get_settings"),
@@ -49,6 +50,9 @@ export const api = {
   activateLicense: (key: string) =>
     invoke<LicenseInfo>("activate_license", { key }),
   isPro: () => invoke<boolean>("is_pro"),
+
+  // Claude Code
+  getClaudePlan: () => invoke<string>("get_claude_plan"),
 
   // Tray
   refreshTray: () => invoke<void>("trigger_tray_refresh"),

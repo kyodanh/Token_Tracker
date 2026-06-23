@@ -22,6 +22,7 @@ export const usePopupStore = create<PopupState>((set) => ({
   refresh: async () => {
     set({ loading: true, error: null });
     try {
+      await api.checkAndAdvanceResets();
       const [summary, weeklySpend, subscriptions, isPro] = await Promise.all([
         api.getTodaySummary(),
         api.getWeeklySpend(),

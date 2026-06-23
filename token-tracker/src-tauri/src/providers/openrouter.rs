@@ -52,6 +52,7 @@ impl Provider for OpenRouterProvider {
             tokens_limit: limit_tokens,
             cost_usd: Some(cost_usd),
             raw_json: Some(raw),
+            account_label: None,
         })
     }
 }

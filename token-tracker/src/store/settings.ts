@@ -34,7 +34,11 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   },
   setSetting: async (key, value) => {
     const snake = key.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
-    await api.setSetting(snake, String(value));
+    try {
+      await api.setSetting(snake, String(value));
+    } catch (e) {
+      console.error("setSetting failed:", e);
+    }
     set((s) => ({ settings: { ...s.settings, [key]: value } }));
     if (key === "iconStyle") {
       api.refreshTray().catch(() => {});

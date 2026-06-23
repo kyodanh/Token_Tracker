@@ -14,7 +14,23 @@
       "Bash(security dump-keychain *)",
       "Bash(security list-keychains *)",
       "Bash(sqlite3 '/Users/dannymacmini/Library/Application Support/TokenTracker/db.sqlite' 'SELECT raw_json FROM usage_snapshots WHERE provider_id='\\\\''claude_web'\\\\'' ORDER BY captured_at DESC LIMIT 1;')",
-      "Bash(sqlite3 '/Users/dannymacmini/Library/Application Support/TokenTracker/db.sqlite' 'SELECT provider_id, snapshot_type, tokens_used, tokens_limit, cost_usd, datetime\\(captured_at, '\\\\''unixepoch'\\\\'', '\\\\''localtime'\\\\''\\) as time FROM usage_snapshots WHERE provider_id='\\\\''claude_web'\\\\'' ORDER BY captured_at DESC LIMIT 3;')"
+      "Bash(sqlite3 '/Users/dannymacmini/Library/Application Support/TokenTracker/db.sqlite' 'SELECT provider_id, snapshot_type, tokens_used, tokens_limit, cost_usd, datetime\\(captured_at, '\\\\''unixepoch'\\\\'', '\\\\''localtime'\\\\''\\) as time FROM usage_snapshots WHERE provider_id='\\\\''claude_web'\\\\'' ORDER BY captured_at DESC LIMIT 3;')",
+      "Bash(cargo build *)",
+      "Bash(~/.cargo/bin/cargo build *)",
+      "Bash(cargo tree *)",
+      "Bash(rustc --version)",
+      "Bash(python3 -c \"import sys,json; d=json.loads\\(sys.stdin.read\\(\\)\\); print\\(list\\(d.keys\\(\\)\\)\\)\")",
+      "Bash(read f *)",
+      "Bash(python3 -c ' *)",
+      "Bash(sqlite3 \"/Users/dannymacmini/Library/Application Support/TokenTracker/db.sqlite\" \"SELECT * FROM daily_spend ORDER BY date DESC LIMIT 14;\")",
+      "Bash(sqlite3 \"/Users/dannymacmini/Library/Application Support/Tokens4Breakfast/data.db\" \"SELECT * FROM daily_spend ORDER BY date DESC LIMIT 14;\")",
+      "Bash(sqlite3 '/Users/dannymacmini/Library/Application Support/TokenTracker/db.sqlite' ' *)",
+      "Bash(sqlite3 \"/Users/dannymacmini/Library/Application Support/TokenTracker/db.sqlite\" \"SELECT provider_id, date, tokens_used, cost_usd FROM daily_spend ORDER BY date DESC;\")",
+      "Bash(xargs '-I{}' python3 -c ' *)",
+      "Bash(~/.cargo/bin/cargo check *)",
+      "Bash(rustup target *)",
+      "Bash(rustup show *)",
+      "Bash(chmod +x /Users/dannymacmini/Desktop/MacMini_Cty/02_Du_an_ngoai/Token_Tracker/build.sh)"
     ],
     "additionalDirectories": [
       "/Users/dannymacmini/Desktop/MacMini_Cty/02_Du_an_ngoai/Token_Tracker/token-tracker"

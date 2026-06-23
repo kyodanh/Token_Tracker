@@ -3,10 +3,7 @@ import type { ReactNode } from "react";
 type Section =
   | "providers"
   | "subscriptions"
-  | "budgets"
   | "display"
-  | "notifications"
-  | "license"
   | "about";
 
 const NAV: { id: Section; label: string; icon: ReactNode }[] = [
@@ -31,41 +28,12 @@ const NAV: { id: Section; label: string; icon: ReactNode }[] = [
     ),
   },
   {
-    id: "budgets",
-    label: "Budgets",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <circle cx="12" cy="12" r="9" />
-        <path d="M12 7v5l3 2" />
-      </svg>
-    ),
-  },
-  {
     id: "display",
     label: "Display",
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <rect x="3" y="3" width="18" height="18" rx="2" />
         <path d="M3 9h6v12M3 9V3" />
-      </svg>
-    ),
-  },
-  {
-    id: "notifications",
-    label: "Notifications",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0" />
-      </svg>
-    ),
-  },
-  {
-    id: "license",
-    label: "License",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <circle cx="8" cy="15" r="4" />
-        <path d="M10.85 12.15 19 4l2 2-2 2 1.5 1.5L18 12l-1.5-1.5L14 13" />
       </svg>
     ),
   },

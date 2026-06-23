@@ -5,6 +5,7 @@ export interface Provider {
   keychainKey: string | null;
   lastSyncedAt: number | null;
   createdAt: number;
+  accountLabel: string | null;
 }
 
 export interface UsageSnapshot {

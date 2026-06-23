@@ -3,10 +3,7 @@ import { Sidebar } from "../../components/settings/Sidebar";
 import type { Section } from "../../components/settings/Sidebar";
 import { ProvidersPanel } from "../../components/settings/ProvidersPanel";
 import { SubscriptionsPanel } from "../../components/settings/SubscriptionsPanel";
-import { BudgetsPanel } from "../../components/settings/BudgetsPanel";
 import { DisplayPanel } from "../../components/settings/DisplayPanel";
-import { NotificationsPanel } from "../../components/settings/NotificationsPanel";
-import { LicensePanel } from "../../components/settings/LicensePanel";
 import { AboutPanel } from "../../components/settings/AboutPanel";
 import { useSettingsStore } from "../../store/settings";
 
@@ -22,10 +19,7 @@ export function App() {
     switch (section) {
       case "providers": return <ProvidersPanel />;
       case "subscriptions": return <SubscriptionsPanel />;
-      case "budgets": return <BudgetsPanel />;
       case "display": return <DisplayPanel />;
-      case "notifications": return <NotificationsPanel />;
-      case "license": return <LicensePanel />;
       case "about": return <AboutPanel />;
     }
   };

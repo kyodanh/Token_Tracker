@@ -7,28 +7,33 @@ interface Props {
   summary: ProviderSummary;
 }
 
-function formatTime(ts: number) {
-  return new Date(ts)
+// captured_at / last_synced_at come from SQLite unixepoch() → seconds, multiply by 1000 for JS Date
+function formatTime(tsSeconds: number) {
+  return new Date(tsSeconds * 1000)
     .toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })
     .toLowerCase();
 }
 
-function timeSince(ts: number) {
-  const diff = Date.now() - ts;
+function timeSince(tsSeconds: number) {
+  const diff = Date.now() - tsSeconds * 1000;
   if (diff < 60_000) return "just now";
   if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
-  return formatTime(ts);
+  return formatTime(tsSeconds);
 }
 
+// Format an ISO reset time: if today → "resets at X:XXpm", otherwise "resets Day at X:XXpm"
 function formatResetsAt(isoString: string): string {
   const d = new Date(isoString);
+  const now = new Date();
+  const isToday = d.toDateString() === now.toDateString();
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const day = days[d.getDay()];
   const h = d.getHours();
   const m = d.getMinutes().toString().padStart(2, "0");
   const ampm = h >= 12 ? "pm" : "am";
   const h12 = h % 12 || 12;
-  return `resets ${day} at ${h12}:${m}${ampm}`;
+  return isToday
+    ? `resets today at ${h12}:${m}${ampm}`
+    : `resets ${days[d.getDay()]} at ${h12}:${m}${ampm}`;
 }
 
 function usageColor(pct: number) {
@@ -52,7 +57,20 @@ export function ProviderCard({ summary }: Props) {
 
   const pct = usagePercent != null ? Math.round(usagePercent) : null;
   const wpct = weeklyUsagePercent != null ? Math.round(weeklyUsagePercent) : null;
-  const capturedLabel = snapshot?.capturedAt ? `today at ${formatTime(snapshot.capturedAt)}` : "";
+
+  // Extract five_hour.resets_at from raw_json for session reset time
+  const rawParsed = snapshot?.rawJson
+    ? (() => { try { return JSON.parse(snapshot.rawJson); } catch { return null; } })()
+    : null;
+  const sessionResetsAt: string | null = rawParsed?.five_hour?.resets_at ?? null;
+
+  // CURRENT SESSION header label: prefer reset time, fall back to update time
+  const sessionLabel = sessionResetsAt
+    ? formatResetsAt(sessionResetsAt)
+    : snapshot?.capturedAt
+    ? `updated ${formatTime(snapshot.capturedAt)}`
+    : "";
+
   const syncedLabel = provider.lastSyncedAt ? timeSince(provider.lastSyncedAt) : "just now";
 
   return (
@@ -69,7 +87,24 @@ export function ProviderCard({ summary }: Props) {
             flexShrink: 0,
           }}
         />
-        <span style={{ fontSize: 13.5, fontWeight: 600, color: "#e8943a" }}>{display.name}</span>
+        <div style={{ display: "flex", flexDirection: "column", gap: 1, minWidth: 0 }}>
+          <span style={{ fontSize: 13.5, fontWeight: 600, color: "#e8943a", lineHeight: 1.2 }}>{display.name}</span>
+          {provider.accountLabel && (
+            <span
+              style={{
+                fontSize: 10.5,
+                color: "#b0b0b8",
+                lineHeight: 1.2,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                maxWidth: 180,
+              }}
+            >
+              {provider.accountLabel}
+            </span>
+          )}
+        </div>
         <div style={{ flex: 1 }} />
         <button
           onClick={handleRefresh}
@@ -115,33 +150,47 @@ export function ProviderCard({ summary }: Props) {
                 <span style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: "0.7px", color: "#7a7a7e" }}>
                   CURRENT SESSION
                 </span>
-                {capturedLabel && (
-                  <span style={{ fontSize: 11, color: "#6a6a6e" }}>{capturedLabel}</span>
+                {sessionLabel && (
+                  <span style={{ fontSize: 11, color: "#6a6a6e" }}>{sessionLabel}</span>
                 )}
               </div>
 
               {pct != null ? (
                 <>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 10 }}>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+                      <span
+                        style={{
+                          fontSize: 22,
+                          fontWeight: 700,
+                          letterSpacing: -0.5,
+                          color: usageColor(pct),
+                          fontFamily: "'JetBrains Mono',monospace",
+                          lineHeight: 1,
+                        }}
+                      >
+                        {pct}<span style={{ fontSize: 14 }}>%</span>
+                      </span>
+                      <span style={{ fontSize: 11.5, color: "#7a7a7e" }}>of session limit</span>
+                    </div>
                     <span
                       style={{
-                        fontSize: 30,
-                        fontWeight: 700,
-                        letterSpacing: -1,
+                        fontSize: 11,
+                        fontWeight: 600,
                         color: usageColor(pct),
+                        background: `${usageColor(pct)}18`,
+                        padding: "2px 8px",
+                        borderRadius: 5,
                         fontFamily: "'JetBrains Mono',monospace",
-                        lineHeight: 1,
                       }}
                     >
-                      {pct}
-                      <span style={{ fontSize: 16 }}>%</span>
+                      {100 - pct}% remaining
                     </span>
-                    <span style={{ fontSize: 11.5, color: "#7a7a7e" }}>of session limit used</span>
                   </div>
                   <div
                     style={{
-                      marginTop: 11,
-                      height: 7,
+                      marginTop: 9,
+                      height: 6,
                       borderRadius: 6,
                       background: "rgba(255,255,255,0.06)",
                       overflow: "hidden",
@@ -153,25 +202,26 @@ export function ProviderCard({ summary }: Props) {
                         height: "100%",
                         borderRadius: 6,
                         background: `linear-gradient(90deg,${usageColor(pct)}99,${usageColor(pct)})`,
-                        boxShadow: `0 0 10px ${usageColor(pct)}80`,
+                        boxShadow: `0 0 8px ${usageColor(pct)}80`,
                         transition: "width 0.5s",
                       }}
                     />
                   </div>
                 </>
               ) : snapshot.costUsd != null ? (
-                <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 8 }}>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 10 }}>
                   <span
                     style={{
-                      fontSize: 30,
+                      fontSize: 22,
                       fontWeight: 700,
-                      letterSpacing: -1,
+                      letterSpacing: -0.5,
                       color: "#3ecf8e",
                       fontFamily: "'JetBrains Mono',monospace",
                     }}
                   >
                     ${snapshot.costUsd.toFixed(3)}
                   </span>
+                  <span style={{ fontSize: 11.5, color: "#7a7a7e" }}>this session</span>
                 </div>
               ) : (
                 <span style={{ fontSize: 12, color: "#6a6a6e", display: "block", marginTop: 8 }}>
@@ -193,21 +243,35 @@ export function ProviderCard({ summary }: Props) {
                       <span style={{ fontSize: 11, color: "#6a6a6e" }}>{formatResetsAt(weeklyResetsAt)}</span>
                     )}
                   </div>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 10 }}>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+                      <span
+                        style={{
+                          fontSize: 22,
+                          fontWeight: 700,
+                          letterSpacing: -0.5,
+                          color: usageColor(wpct),
+                          fontFamily: "'JetBrains Mono',monospace",
+                          lineHeight: 1,
+                        }}
+                      >
+                        {wpct}<span style={{ fontSize: 14 }}>%</span>
+                      </span>
+                      <span style={{ fontSize: 11.5, color: "#7a7a7e" }}>of weekly allowance</span>
+                    </div>
                     <span
                       style={{
-                        fontSize: 30,
-                        fontWeight: 700,
-                        letterSpacing: -1,
+                        fontSize: 11,
+                        fontWeight: 600,
                         color: usageColor(wpct),
+                        background: `${usageColor(wpct)}18`,
+                        padding: "2px 8px",
+                        borderRadius: 5,
                         fontFamily: "'JetBrains Mono',monospace",
-                        lineHeight: 1,
                       }}
                     >
-                      {wpct}
-                      <span style={{ fontSize: 16 }}>%</span>
+                      {100 - wpct}% remaining
                     </span>
-                    <span style={{ fontSize: 11.5, color: "#7a7a7e" }}>of weekly allowance used</span>
                   </div>
                   <div
                     style={{

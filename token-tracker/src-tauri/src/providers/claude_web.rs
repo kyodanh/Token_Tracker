@@ -10,7 +10,17 @@ pub struct ClaudeWebProvider;
 struct OrgEntry {
     uuid: Option<String>,
     #[serde(default)]
+    name: Option<String>,
+    #[serde(default)]
     capabilities: serde_json::Value,
+}
+
+#[derive(Deserialize, Debug, Default)]
+struct AccountInfo {
+    email: Option<String>,
+    full_name: Option<String>,
+    name: Option<String>,
+    display_name: Option<String>,
 }
 
 #[derive(Deserialize, Debug, Default)]
@@ -161,7 +171,7 @@ impl Provider for ClaudeWebProvider {
             } else {
                 "https://claude.ai/api/account_details".to_string()
             };
-            let r = client.get(&url).headers(headers_common).send().await;
+            let r = client.get(&url).headers(headers_common.clone()).send().await;
             match r {
                 Ok(r) if r.status().is_success() => {
                     let text = r.text().await.unwrap_or_default();
@@ -178,6 +188,29 @@ impl Provider for ClaudeWebProvider {
             }
         };
 
+        // 5. Fetch account email from /api/me
+        let account_label = {
+            let r = client
+                .get("https://claude.ai/api/me")
+                .headers(headers_common.clone())
+                .send()
+                .await;
+            match r {
+                Ok(resp) if resp.status().is_success() => {
+                    let text = resp.text().await.unwrap_or_default();
+                    if let Ok(info) = serde_json::from_str::<AccountInfo>(&text) {
+                        info.email
+                            .or(info.full_name)
+                            .or(info.display_name)
+                            .or(info.name)
+                    } else {
+                        None
+                    }
+                }
+                _ => orgs.first().and_then(|o| o.name.clone()),
+            }
+        };
+
         let tokens_used = rate_tokens_used.or(cap_tokens_used).or(acct_tokens_used);
         let tokens_limit = rate_tokens_limit.or(cap_tokens_limit).or(acct_tokens_limit).or(billing_tokens_limit);
 
@@ -188,6 +221,7 @@ impl Provider for ClaudeWebProvider {
             tokens_limit,
             cost_usd,
             raw_json: usage_json.or(Some(raw)),
+            account_label,
         })
     }
 }

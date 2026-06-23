@@ -52,6 +52,7 @@ impl Provider for ChatGptWebProvider {
             tokens_limit: None,
             cost_usd: None,
             raw_json: Some(raw),
+            account_label: None,
         })
     }
 }

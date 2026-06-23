@@ -1,0 +1,86 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version (e.g. 1.0.0)'
+        required: true
+        default: '1.0.0'
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            target: aarch64-apple-darwin
+            artifact: TokenTracker_*_aarch64.dmg
+          - platform: macos-13
+            target: x86_64-apple-darwin
+            artifact: TokenTracker_*_x64.dmg
+          - platform: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact: TokenTracker_*_x64-setup.exe
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: token-tracker/package-lock.json
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: token-tracker/src-tauri -> target
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: token-tracker
+
+      - name: Install OpenSSL (Windows)
+        if: matrix.platform == 'windows-latest'
+        run: |
+          choco install openssl -y
+          echo "OPENSSL_DIR=C:\Program Files\OpenSSL-Win64" >> $env:GITHUB_ENV
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: token-tracker
+          tagName: ${{ github.ref_name }}
+          releaseName: 'TokenTracker ${{ github.ref_name }}'
+          releaseBody: |
+            ## TokenTracker ${{ github.ref_name }}
+
+            ### Downloads
+            | Platform | File |
+            |----------|------|
+            | macOS (Apple Silicon) | `TokenTracker_*_aarch64.dmg` |
+            | macOS (Intel) | `TokenTracker_*_x64.dmg` |
+            | Windows 64-bit | `TokenTracker_*_x64-setup.exe` |
+
+            ### Installation
+            - **macOS**: Open DMG → drag to Applications → right-click → Open (first launch)
+            - **Windows**: Run installer as Administrator
+
+          releaseDraft: true
+          prerelease: false
+          args: --target ${{ matrix.target }}
