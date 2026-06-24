@@ -20,26 +20,6 @@ function HeaderBarIcon() {
   );
 }
 
-function HeroBarIcon() {
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "flex-end",
-        gap: 3,
-        height: 26,
-        padding: 6,
-        background: "rgba(232,148,58,0.12)",
-        borderRadius: 9,
-      }}
-    >
-      <div style={{ width: 3, height: 8, background: "#e8943a", borderRadius: 1 }} />
-      <div style={{ width: 3, height: 14, background: "#e8943a", borderRadius: 1 }} />
-      <div style={{ width: 3, height: 20, background: "#e8943a", borderRadius: 1 }} />
-    </div>
-  );
-}
-
 const BTN = {
   display: "flex",
   alignItems: "center",
