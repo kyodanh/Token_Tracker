@@ -516,6 +516,7 @@ pub fn run() {
             commands::usage::check_and_advance_resets,
             commands::settings::get_settings,
             commands::settings::set_setting,
+            commands::settings::get_claude_status,
             commands::sync::sync_provider,
             commands::sync::sync_all_providers,
             keychain::set_provider_secret,

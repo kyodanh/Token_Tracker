@@ -6,6 +6,7 @@ import { ProviderCard } from "../../components/ProviderCard";
 import { WeeklyChart } from "../../components/WeeklyChart";
 import { SubscriptionsList } from "../../components/SubscriptionsList";
 import { api } from "../../lib/api";
+import { ClaudeStatus } from "../../components/ClaudeStatus";
 
 function HeaderBarIcon() {
   return (
@@ -178,7 +179,12 @@ export function App() {
 
           <SubscriptionsList subscriptions={subscriptions} onManage={() => api.openSettings()} />
 
-          <div style={{ height: 14 }} />
+          {/* Divider */}
+          <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "4px 0 12px" }} />
+
+          <ClaudeStatus />
+
+          <div style={{ height: 8 }} />
         </div>
 
         {/* Footer */}
@@ -187,8 +193,7 @@ export function App() {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            padding: "14px 16px",
-            borderTop: "1px solid rgba(255,255,255,0.06)",
+            padding: "10px 16px",
             flexShrink: 0,
           }}
         >

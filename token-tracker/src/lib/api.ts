@@ -72,6 +72,15 @@ export const api = {
   removeClaudeWebAccount: (id: string) =>
     invoke<void>("remove_claude_web_account", { id }),
 
+  // Status
+  getClaudeStatus: () =>
+    invoke<{
+      indicator: string;
+      description: string;
+      components: { name: string; status: string }[];
+      incidents: { name: string; status: string; body: string }[];
+    }>("get_claude_status"),
+
   // Tray
   refreshTray: () => invoke<void>("trigger_tray_refresh"),
 
