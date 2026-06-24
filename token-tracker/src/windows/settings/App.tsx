@@ -4,6 +4,7 @@ import type { Section } from "../../components/settings/Sidebar";
 import { ProvidersPanel } from "../../components/settings/ProvidersPanel";
 import { SubscriptionsPanel } from "../../components/settings/SubscriptionsPanel";
 import { DisplayPanel } from "../../components/settings/DisplayPanel";
+import { QuickLinksPanel } from "../../components/settings/QuickLinksPanel";
 import { AboutPanel } from "../../components/settings/AboutPanel";
 import { useSettingsStore } from "../../store/settings";
 
@@ -20,6 +21,7 @@ export function App() {
       case "providers": return <ProvidersPanel />;
       case "subscriptions": return <SubscriptionsPanel />;
       case "display": return <DisplayPanel />;
+      case "quick_links": return <QuickLinksPanel />;
       case "about": return <AboutPanel />;
     }
   };

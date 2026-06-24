@@ -111,9 +111,9 @@ export function DisplayPanel() {
           overflow: "hidden",
           marginBottom: 20,
           border: "1px solid rgba(255,255,255,0.07)",
+          boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
         }}
       >
-        {/* Fake macOS menu bar */}
         <div
           style={{
             display: "flex",
@@ -125,53 +125,103 @@ export function DisplayPanel() {
             height: 38,
           }}
         >
-          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", marginRight: "auto", fontWeight: 500 }}>Preview</span>
+          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginRight: "auto", fontWeight: 500, fontStyle: "italic" }}>
+            Preview
+          </span>
           <span style={{ fontSize: 12.5, color: "rgba(255,255,255,0.7)", fontWeight: 500 }}>Tue 10:41</span>
           <MenuBarItem id={settings.iconStyle as IconStyle} large />
         </div>
       </div>
 
+      {/* Icon Style */}
       <div className="mb-6">
-        <p className="text-xs text-[#666] uppercase tracking-wide mb-3">Icon Style</p>
+        <p style={{ fontSize: 11, color: "#555", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 10 }}>
+          Icon Style
+        </p>
         <div className="grid grid-cols-3 gap-2">
-          {ICON_STYLES.map((style) => (
-            <button
-              key={style.id}
-              onClick={() => setSetting("iconStyle", style.id)}
-              className={`flex flex-col items-center gap-2 p-3 rounded-lg border transition-all ${
-                settings.iconStyle === style.id
-                  ? "border-amber-500 bg-amber-500/10"
-                  : "border-[#2a2a2a] bg-[#1a1a1a] hover:border-[#3a3a3a]"
-              }`}
-            >
-              <MenuBarItem id={style.id} />
-              <span className="text-[10px] text-[#888]">{style.label}</span>
-            </button>
-          ))}
+          {ICON_STYLES.map((style) => {
+            const isActive = settings.iconStyle === style.id;
+            return (
+              <button
+                key={style.id}
+                onClick={() => setSetting("iconStyle", style.id)}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "12px 6px",
+                  borderRadius: 10,
+                  border: isActive ? "1px solid rgba(240,168,80,0.7)" : "1px solid rgba(255,255,255,0.06)",
+                  background: isActive ? "rgba(232,148,58,0.1)" : "rgba(255,255,255,0.02)",
+                  cursor: "pointer",
+                  transition: "all 0.15s",
+                  outline: "none",
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.14)";
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.06)";
+                }}
+              >
+                <MenuBarItem id={style.id} />
+                <span style={{ fontSize: 10.5, color: isActive ? "#f0a850" : "#777", fontWeight: isActive ? 600 : 400 }}>
+                  {style.label}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      <div className="mb-4">
-        <p className="text-xs text-[#666] uppercase tracking-wide mb-3">Menu Bar Metric</p>
-        <select
-          value={settings.menuBarMetric}
-          onChange={(e) => setSetting("menuBarMetric", e.target.value)}
-          className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded px-3 py-2 text-sm text-[#e5e5e5] focus:outline-none focus:border-amber-500"
-        >
-          <option value="total_cost">All Providers Total</option>
-          <option value="claude_web">Claude Web</option>
-          <option value="claude_code">Claude Code</option>
-          <option value="openai">OpenAI API</option>
-          <option value="openrouter">OpenRouter</option>
-          <option value="chatgpt_web">ChatGPT Web</option>
-        </select>
+      {/* Menu Bar Metric */}
+      <div style={{ marginBottom: 16 }}>
+        <p style={{ fontSize: 11, color: "#555", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600, marginBottom: 10 }}>
+          Menu Bar Metric
+        </p>
+        <div style={{ position: "relative" }}>
+          <select
+            value={settings.menuBarMetric}
+            onChange={(e) => setSetting("menuBarMetric", e.target.value)}
+            style={{
+              width: "100%",
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.09)",
+              borderRadius: 8,
+              padding: "8px 32px 8px 12px",
+              fontSize: 13,
+              color: "#e5e5e5",
+              outline: "none",
+              appearance: "none",
+              cursor: "pointer",
+              fontFamily: "inherit",
+            }}
+          >
+            <option value="total_cost">All Providers Total</option>
+            <option value="claude_web">Claude Web</option>
+            <option value="claude_code">Claude Code</option>
+            <option value="openai">OpenAI API</option>
+            <option value="openrouter">OpenRouter</option>
+            <option value="chatgpt_web">ChatGPT Web</option>
+          </select>
+          <svg
+            width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2.5"
+            style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
+          >
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </div>
       </div>
 
-      <ToggleRow
-        label="Show time remaining"
-        value={settings.showTimeRemaining}
-        onChange={(v) => setSetting("showTimeRemaining", v)}
-      />
+      {/* Toggle */}
+      <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 14 }}>
+        <ToggleRow
+          label="Show time remaining"
+          value={settings.showTimeRemaining}
+          onChange={(v) => setSetting("showTimeRemaining", v)}
+        />
+      </div>
     </div>
   );
 }
@@ -186,7 +236,7 @@ function ToggleRow({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <div className="flex items-center justify-between py-2">
+    <div className="flex items-center justify-between py-1">
       <span className="text-sm text-[#e5e5e5]">{label}</span>
       <label className="relative inline-flex items-center cursor-pointer">
         <input

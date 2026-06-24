@@ -63,6 +63,12 @@ export type IconStyle =
   | "progress"
   | "compact_dot";
 
+export interface QuickLink {
+  id: string;
+  name: string;
+  url: string;
+}
+
 export interface AppSettings {
   iconStyle: IconStyle;
   menuBarMetric: string;
@@ -70,6 +76,7 @@ export interface AppSettings {
   budgetAlerts: boolean;
   weeklySummary: boolean;
   resetReminder: boolean;
+  showQuickLinks: boolean;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -79,6 +86,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   budgetAlerts: true,
   weeklySummary: false,
   resetReminder: false,
+  showQuickLinks: true,
 };
 
 export const PROVIDER_DISPLAY: Record<string, { name: string; icon: string; color: string }> = {

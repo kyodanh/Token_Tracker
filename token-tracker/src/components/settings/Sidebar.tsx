@@ -4,6 +4,7 @@ type Section =
   | "providers"
   | "subscriptions"
   | "display"
+  | "quick_links"
   | "about";
 
 const NAV: { id: Section; label: string; icon: ReactNode }[] = [
@@ -34,6 +35,16 @@ const NAV: { id: Section; label: string; icon: ReactNode }[] = [
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <rect x="3" y="3" width="18" height="18" rx="2" />
         <path d="M3 9h6v12M3 9V3" />
+      </svg>
+    ),
+  },
+  {
+    id: "quick_links",
+    label: "Quick Links",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
       </svg>
     ),
   },
@@ -72,7 +83,7 @@ export function Sidebar({ active, onChange }: Props) {
       {/* Logo */}
       <div style={{ display: "flex", alignItems: "center", gap: 9, padding: "4px 8px 16px" }}>
         <span style={{ fontSize: 20 }}>🥞</span>
-        <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-0.2px", color: "#e9e9ec" }}>T4B</span>
+        <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-0.2px", color: "#e9e9ec" }}>TokenBrew</span>
       </div>
 
       {/* Nav */}

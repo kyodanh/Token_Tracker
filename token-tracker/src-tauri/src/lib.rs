@@ -406,6 +406,11 @@ async fn open_settings_window(app: AppHandle) {
         #[cfg(target_os = "macos")]
         let _ = win.set_always_on_top(false);
     }
+    // Re-apply Accessory policy after showing a regular window on macOS,
+    // because showing a window can cause the OS to revert to Regular policy
+    // which makes the dock icon reappear.
+    #[cfg(target_os = "macos")]
+    let _ = app.set_activation_policy(tauri::ActivationPolicy::Accessory);
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -428,6 +433,27 @@ pub fn run() {
                         if let Some(win) = handle_s.get_webview_window("settings") {
                             let _ = win.hide();
                         }
+                    }
+                });
+            }
+
+            // Auto-hide popup when it loses focus (click outside).
+            // Delay 150 ms before hiding so that show() + set_focus() can complete
+            // without the intermediate Focused(false) causing an immediate hide.
+            if let Some(popup) = app.get_webview_window("popup") {
+                let handle_p = handle.clone();
+                popup.on_window_event(move |event| {
+                    if let tauri::WindowEvent::Focused(false) = event {
+                        let handle = handle_p.clone();
+                        tauri::async_runtime::spawn(async move {
+                            tokio::time::sleep(std::time::Duration::from_millis(150)).await;
+                            if let Some(win) = handle.get_webview_window("popup") {
+                                // Only hide if still not focused after the delay.
+                                if !win.is_focused().unwrap_or(true) {
+                                    let _ = win.hide();
+                                }
+                            }
+                        });
                     }
                 });
             }

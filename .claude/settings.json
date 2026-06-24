@@ -41,7 +41,8 @@
       "Bash(claude auth *)",
       "Bash(CLAUDE_CONFIG_DIR=/tmp/test-claude-config claude auth status)",
       "Bash(pkill -f \"token-tracker\")",
-      "Bash(pkill -f \"tauri dev\")"
+      "Bash(pkill -f \"tauri dev\")",
+      "Bash(PATH=/Users/dannymacmini/.cargo/bin:__TRACKED_VAR__ npm run tauri dev)"
     ],
     "additionalDirectories": [
       "/Users/dannymacmini/Desktop/MacMini_Cty/02_Du_an_ngoai/Token_Tracker/token-tracker"

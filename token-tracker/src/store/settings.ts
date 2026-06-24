@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { AppSettings, IconStyle, LicenseInfo } from "../lib/types";
+import type { AppSettings, IconStyle, LicenseInfo, QuickLink } from "../lib/types";
 import { DEFAULT_SETTINGS } from "../lib/types";
 import { api } from "../lib/api";
 
@@ -7,21 +7,23 @@ interface SettingsState {
   settings: AppSettings;
   licenseInfo: LicenseInfo | null;
   loaded: boolean;
+  quickLinks: QuickLink[];
   load: () => Promise<void>;
   setSetting: (key: keyof AppSettings, value: string | boolean) => Promise<void>;
   setLicenseInfo: (info: LicenseInfo) => void;
+  setQuickLinks: (links: QuickLink[]) => Promise<void>;
 }
 
 export const useSettingsStore = create<SettingsState>((set) => ({
   settings: DEFAULT_SETTINGS,
   licenseInfo: null,
   loaded: false,
+  quickLinks: [],
   load: async () => {
     const [rawSettings, licenseInfo] = await Promise.all([
       api.getSettings(),
       api.getLicenseInfo(),
     ]);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const settings: AppSettings = {
       iconStyle: (rawSettings.icon_style as IconStyle) ?? DEFAULT_SETTINGS.iconStyle,
       menuBarMetric: rawSettings.menu_bar_metric ?? DEFAULT_SETTINGS.menuBarMetric,
@@ -29,8 +31,12 @@ export const useSettingsStore = create<SettingsState>((set) => ({
       budgetAlerts: rawSettings.budget_alerts !== "false",
       weeklySummary: rawSettings.weekly_summary === "true",
       resetReminder: rawSettings.reset_reminder === "true",
+      showQuickLinks: rawSettings.show_quick_links !== "false",
     };
-    set({ settings, licenseInfo, loaded: true });
+    const quickLinks: QuickLink[] = (() => {
+      try { return JSON.parse(rawSettings.quick_links ?? "[]"); } catch { return []; }
+    })();
+    set({ settings, licenseInfo, loaded: true, quickLinks });
   },
   setSetting: async (key, value) => {
     const snake = key.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
@@ -45,4 +51,12 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     }
   },
   setLicenseInfo: (info) => set({ licenseInfo: info }),
+  setQuickLinks: async (links) => {
+    try {
+      await api.setSetting("quick_links", JSON.stringify(links));
+    } catch (e) {
+      console.error("setQuickLinks failed:", e);
+    }
+    set({ quickLinks: links });
+  },
 }));

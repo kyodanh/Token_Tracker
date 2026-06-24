@@ -5,6 +5,7 @@ import { usePolling } from "../../hooks/usePolling";
 import { ProviderCard } from "../../components/ProviderCard";
 import { WeeklyChart } from "../../components/WeeklyChart";
 import { SubscriptionsList } from "../../components/SubscriptionsList";
+import { QuickLinksSection } from "../../components/QuickLinksSection";
 import { api } from "../../lib/api";
 import { ClaudeStatus } from "../../components/ClaudeStatus";
 
@@ -55,7 +56,7 @@ const BTN = {
 };
 
 export function App() {
-  const { summary, weeklySpend, subscriptions, loading } = usePopupStore();
+  const { summary, weeklySpend, subscriptions, loading, quickLinks, showQuickLinks } = usePopupStore();
   const refresh = usePopupStore((s) => s.refresh);
   usePolling();
 
@@ -123,8 +124,9 @@ export function App() {
           <div data-tauri-drag-region style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
             <HeaderBarIcon />
             <span style={{ fontSize: 14, fontWeight: 600, letterSpacing: "-0.2px" }}>
-              Tokens 4 Breakfast
+              TokenBrew
             </span>
+             <div style={{ fontSize: 12.5, color: "#8a8a8e", marginTop: 1 }}>Đốt token thôi, đừng đốt ví.</div>
           </div>
           <button
             onClick={refresh}
@@ -157,13 +159,13 @@ export function App() {
         </div>
 
         {/* Hero */}
-        <div style={{ padding: "6px 16px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+        {/* <div style={{ padding: "6px 16px 16px", display: "flex", alignItems: "center", gap: 12 }}>
           <HeroBarIcon />
           <div>
-            <div style={{ fontSize: 17, fontWeight: 700, letterSpacing: "-0.3px" }}>Token Appetite</div>
-            <div style={{ fontSize: 12.5, color: "#8a8a8e", marginTop: 1 }}>Burn tokens, not your wallet.</div>
+            <div style={{ fontSize: 17, fontWeight: 700, letterSpacing: "-0.3px" }}>Cơn Thèm Token</div>
+            <div style={{ fontSize: 12.5, color: "#8a8a8e", marginTop: 1 }}>Đốt token thôi, đừng đốt ví.</div>
           </div>
-        </div>
+        </div> */}
 
         {/* Scrollable content */}
         <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
@@ -178,6 +180,13 @@ export function App() {
           <WeeklyChart weeklySpend={weeklySpend} />
 
           <SubscriptionsList subscriptions={subscriptions} onManage={() => api.openSettings()} />
+
+          {showQuickLinks && quickLinks.length > 0 && (
+            <>
+              <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "4px 0 12px" }} />
+              <QuickLinksSection links={quickLinks} />
+            </>
+          )}
 
           {/* Divider */}
           <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "4px 0 12px" }} />
